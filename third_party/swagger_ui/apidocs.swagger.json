@@ -1,0 +1,402 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "grpc_example/v1/route_guide.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "RouteGuide"
+    },
+    {
+      "name": "Account"
+    },
+    {
+      "name": "Greeter"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/grpc_example.v1.Account/Login": {
+      "post": {
+        "operationId": "Account_Login",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LoginResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1LoginRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Account"
+        ]
+      }
+    },
+    "/grpc_example.v1.Greeter/SayHello": {
+      "post": {
+        "summary": "Sends a greeting",
+        "operationId": "Greeter_SayHello",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1HelloReply"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "The request message containing the user's name.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1HelloRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Greeter"
+        ]
+      }
+    },
+    "/grpc_example.v1.RouteGuide/GetFeature": {
+      "post": {
+        "summary": "A simple RPC.",
+        "description": "Obtains the feature at a given position.\n\nA feature with an empty name is returned if there's no feature at the given\nposition.",
+        "operationId": "RouteGuide_GetFeature",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Feature"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "Points are represented as latitude-longitude pairs in the E7 representation\n(degrees multiplied by 10**7 and rounded to the nearest integer).\nLatitudes should be in the range +/- 90 degrees and longitude should be in\nthe range +/- 180 degrees (inclusive).",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1Point"
+            }
+          }
+        ],
+        "tags": [
+          "RouteGuide"
+        ]
+      }
+    },
+    "/grpc_example.v1.RouteGuide/ListFeatures": {
+      "post": {
+        "summary": "A server-to-client streaming RPC.",
+        "description": "Obtains the Features available within the given Rectangle.  Results are\nstreamed rather than returned at once (e.g. in a response message with a\nrepeated field), as the rectangle may cover a large area and contain a\nhuge number of features.",
+        "operationId": "RouteGuide_ListFeatures",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1Feature"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of v1Feature"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "A latitude-longitude rectangle, represented as two diagonally opposite\npoints \"lo\" and \"hi\".",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1Rectangle"
+            }
+          }
+        ],
+        "tags": [
+          "RouteGuide"
+        ]
+      }
+    },
+    "/grpc_example.v1.RouteGuide/RecordRoute": {
+      "post": {
+        "summary": "A client-to-server streaming RPC.",
+        "description": "Accepts a stream of Points on a route being traversed, returning a\nRouteSummary when traversal is completed.",
+        "operationId": "RouteGuide_RecordRoute",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RouteSummary"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "Points are represented as latitude-longitude pairs in the E7 representation\n(degrees multiplied by 10**7 and rounded to the nearest integer).\nLatitudes should be in the range +/- 90 degrees and longitude should be in\nthe range +/- 180 degrees (inclusive). (streaming inputs)",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1Point"
+            }
+          }
+        ],
+        "tags": [
+          "RouteGuide"
+        ]
+      }
+    },
+    "/grpc_example.v1.RouteGuide/RouteChat": {
+      "post": {
+        "summary": "A Bidirectional streaming RPC.",
+        "description": "Accepts a stream of RouteNotes sent while a route is being traversed,\nwhile receiving other RouteNotes (e.g. from other users).",
+        "operationId": "RouteGuide_RouteChat",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1RouteNote"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of v1RouteNote"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "A RouteNote is a message sent while at a given point. (streaming inputs)",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1RouteNote"
+            }
+          }
+        ],
+        "tags": [
+          "RouteGuide"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1Feature": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the feature."
+        },
+        "location": {
+          "$ref": "#/definitions/v1Point",
+          "description": "The point where the feature is detected."
+        }
+      },
+      "description": "A feature names something at a given point.\n\nIf a feature could not be named, the name is empty."
+    },
+    "v1HelloReply": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      },
+      "title": "The response message containing the greetings"
+    },
+    "v1HelloRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      },
+      "description": "The request message containing the user's name."
+    },
+    "v1LoginRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "v1LoginResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "expiration": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1Point": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "longitude": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "Points are represented as latitude-longitude pairs in the E7 representation\n(degrees multiplied by 10**7 and rounded to the nearest integer).\nLatitudes should be in the range +/- 90 degrees and longitude should be in\nthe range +/- 180 degrees (inclusive)."
+    },
+    "v1Rectangle": {
+      "type": "object",
+      "properties": {
+        "lo": {
+          "$ref": "#/definitions/v1Point",
+          "description": "One corner of the rectangle."
+        },
+        "hi": {
+          "$ref": "#/definitions/v1Point",
+          "description": "The other corner of the rectangle."
+        }
+      },
+      "description": "A latitude-longitude rectangle, represented as two diagonally opposite\npoints \"lo\" and \"hi\"."
+    },
+    "v1RouteNote": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/v1Point",
+          "description": "The location from which the message is sent."
+        },
+        "message": {
+          "type": "string",
+          "description": "The message to be sent."
+        }
+      },
+      "description": "A RouteNote is a message sent while at a given point."
+    },
+    "v1RouteSummary": {
+      "type": "object",
+      "properties": {
+        "pointCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The number of points received."
+        },
+        "featureCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The number of known features passed while traversing the route."
+        },
+        "distance": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The distance covered in metres."
+        },
+        "elapsedTime": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The duration of the traversal in seconds."
+        }
+      },
+      "description": "A RouteSummary is received in response to a RecordRoute rpc.\n\nIt contains the number of individual points received, the number of\ndetected features, and the total distance covered as the cumulative sum of\nthe distance between each point."
+    }
+  }
+}
