@@ -288,6 +288,7 @@ func createGrpcServer(tlsConfig *tls.Config, enableReflection bool) *grpc.Server
 	grpc_health_v1.RegisterHealthServer(server, health.NewServer())
 
 	// Register custom services
+	pb.RegisterHealthServer(server, handler.NewHealthServer())
 	pb.RegisterGreeterServer(server, handler.NewGreeterServer())
 	pb.RegisterRouteGuideServer(server, handler.NewRouteGuideServer())
 	pb.RegisterAccountServer(server, handler.NewAccountServer())
@@ -316,6 +317,7 @@ func createGatewayMux(
 
 	gatewayMux := runtime.NewServeMux()
 	for _, f := range []func(context.Context, *runtime.ServeMux, *grpc.ClientConn) error{
+		pb.RegisterHealthHandler,
 		pb.RegisterGreeterHandler,
 		pb.RegisterRouteGuideHandler,
 		pb.RegisterAccountHandler,

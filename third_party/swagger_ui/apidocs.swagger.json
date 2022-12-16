@@ -12,6 +12,9 @@
       "name": "Account"
     },
     {
+      "name": "Health"
+    },
+    {
       "name": "Greeter"
     }
   ],
@@ -85,6 +88,79 @@
         ],
         "tags": [
           "Greeter"
+        ]
+      }
+    },
+    "/grpc_example.v1.Health/Check": {
+      "post": {
+        "operationId": "Health_Check",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1HealthCheckResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1HealthCheckRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/grpc_example.v1.Health/Watch": {
+      "post": {
+        "operationId": "Health_Watch",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1HealthCheckResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of v1HealthCheckResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1HealthCheckRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Health"
         ]
       }
     },
@@ -248,6 +324,16 @@
     }
   },
   "definitions": {
+    "HealthCheckResponseServingStatus": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "SERVING",
+        "NOT_SERVING",
+        "SERVICE_UNKNOWN"
+      ],
+      "default": "UNKNOWN"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -288,6 +374,22 @@
         }
       },
       "description": "A feature names something at a given point.\n\nIf a feature could not be named, the name is empty."
+    },
+    "v1HealthCheckRequest": {
+      "type": "object",
+      "properties": {
+        "service": {
+          "type": "string"
+        }
+      }
+    },
+    "v1HealthCheckResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/HealthCheckResponseServingStatus"
+        }
+      }
     },
     "v1HelloReply": {
       "type": "object",
