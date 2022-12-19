@@ -178,7 +178,7 @@ func NewLogger(cores ...zapcore.Core) Logger {
 		zap.New(teeCore,
 			zap.AddCaller(),
 			zap.AddCallerSkip(1),
-			zap.AddStacktrace(zapcore.ErrorLevel),
+			zap.AddStacktrace(zapcore.FatalLevel+1),
 		).Sugar(),
 	}
 }
