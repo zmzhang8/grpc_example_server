@@ -12,23 +12,25 @@ import (
 	"github.com/zmzhang8/grpc_example/test"
 )
 
-func TestLoggerFromContext_success(t *testing.T) {
+func TestMustGetLogger_success(t *testing.T) {
 	wantLogger := log.NewLogger(log.NewCore(false, os.Stdout, false))
 	ctx := context.WithValue(context.TODO(), ContextKey, wantLogger)
 
-	gotLogger := LoggerFromContext(ctx)
+	gotLogger := MustGetLogger(ctx)
 
 	if gotLogger == nil {
 		t.Errorf("logger <nil>; want %v", wantLogger)
 	}
 }
 
-func TestLoggerFromContext_failure(t *testing.T) {
-	gotLogger := LoggerFromContext(context.TODO())
+func TestMustGetLogger_failure(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("panicked false; want true")
+		}
+	}()
 
-	if gotLogger != nil {
-		t.Errorf("logger %v; want <nil>", gotLogger)
-	}
+	MustGetLogger(context.TODO())
 }
 
 func TestUnaryServerInterceptor(t *testing.T) {

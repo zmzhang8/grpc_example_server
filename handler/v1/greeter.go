@@ -19,7 +19,7 @@ func (s *greeterServer) SayHello(
 	ctx context.Context,
 	in *pb.HelloRequest,
 ) (*pb.HelloReply, error) {
-	logger := logging.LoggerFromContext(ctx)
+	logger := logging.MustGetLogger(ctx)
 	logger.Infow("Received ", "name", in.GetName())
 	if len(in.Name) == 0 {
 		return nil, status.Errorf(

@@ -15,10 +15,14 @@ import (
 
 const ContextKey = "logger"
 
-func LoggerFromContext(ctx context.Context) log.Logger {
-	logger, ok := ctx.Value(ContextKey).(log.Logger)
+func MustGetLogger(ctx context.Context) log.Logger {
+	loggerValue := ctx.Value(ContextKey)
+	if loggerValue == nil {
+		panic("logger doesn't exist in context")
+	}
+	logger, ok := loggerValue.(log.Logger)
 	if !ok {
-		return nil
+		panic("bad logger in context")
 	}
 	return logger
 }
