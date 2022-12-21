@@ -272,13 +272,19 @@ func createGrpcServer(tlsConfig *tls.Config, enableReflection bool) *grpc.Server
 			middleware_trace_id.StreamServerInterceptor(),
 			middleware_logging.StreamServerInterceptor(log.DefaultLogger),
 			middleware_recovery.StreamServerInterceptor(log.DefaultLogger),
-			middleware_skip.StreamServerInterceptor(grpc_middleware_auth.StreamServerInterceptor(auth.DefaultAuth), skipAuthFunc),
+			middleware_skip.StreamServerInterceptor(
+				grpc_middleware_auth.StreamServerInterceptor(auth.RejectAll),
+				skipAuthFunc,
+			),
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			middleware_trace_id.UnaryServerInterceptor(),
 			middleware_logging.UnaryServerInterceptor(log.DefaultLogger),
 			middleware_recovery.UnaryServerInterceptor(log.DefaultLogger),
-			middleware_skip.UnaryServerInterceptor(grpc_middleware_auth.UnaryServerInterceptor(auth.DefaultAuth), skipAuthFunc),
+			middleware_skip.UnaryServerInterceptor(
+				grpc_middleware_auth.UnaryServerInterceptor(auth.RejectAll),
+				skipAuthFunc,
+			),
 		)),
 	)
 

@@ -31,7 +31,7 @@ func (s *accountServer) Login(
 }
 
 func (s *accountServer) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return auth.NoAuth(ctx)
+	return auth.AllowAll(ctx)
 }
 
 func NewAccountServer() *accountServer {

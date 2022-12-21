@@ -40,7 +40,7 @@ func (s *healthServer) Watch(
 }
 
 func (s *healthServer) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return auth.NoAuth(ctx)
+	return auth.AllowAll(ctx)
 }
 
 func NewHealthServer() *healthServer {

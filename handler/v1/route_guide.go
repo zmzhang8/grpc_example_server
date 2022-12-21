@@ -154,7 +154,7 @@ func inRange(point *pb.Point, rect *pb.Rectangle) bool {
 }
 
 func (s *routeGuideServer) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return auth.UserAuth(ctx)
+	return auth.SessionAuth(ctx)
 }
 
 func NewRouteGuideServer() *routeGuideServer {

@@ -31,7 +31,7 @@ func (s *greeterServer) SayHello(
 }
 
 func (s *greeterServer) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return auth.UserAuth(ctx)
+	return auth.SessionAuth(ctx)
 }
 
 func NewGreeterServer() *greeterServer {
