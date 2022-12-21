@@ -31,7 +31,7 @@ func TestMustGetAuthMetadata_failure(t *testing.T) {
 }
 
 func TestRejectAll(t *testing.T) {
-	wantErr := status.Error(codes.Unauthenticated, "Unauthenticated")
+	wantErr := status.Error(codes.Unauthenticated, "")
 
 	gotCtx, gotErr := RejectAll(context.TODO())
 

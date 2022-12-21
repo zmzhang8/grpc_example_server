@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"errors"
 
 	grpc_middleware_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/auth"
 	"google.golang.org/grpc/codes"
@@ -24,7 +23,7 @@ func MustGetAuthMetadata(ctx context.Context) string {
 }
 
 func RejectAll(ctx context.Context) (context.Context, error) {
-	return nil, status.Error(codes.Unauthenticated, "Unauthenticated")
+	return nil, status.Error(codes.Unauthenticated, "")
 }
 
 func AllowAll(ctx context.Context) (context.Context, error) {
@@ -43,5 +42,5 @@ func SessionAuth(ctx context.Context) (context.Context, error) {
 		return nil, err
 	}
 
-	return ctx, errors.New("Unimplemented")
+	return nil, status.Error(codes.Unauthenticated, "")
 }
