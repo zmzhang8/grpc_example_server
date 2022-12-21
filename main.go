@@ -27,6 +27,7 @@ import (
 	"github.com/zmzhang8/grpc_example/lib/auth"
 	"github.com/zmzhang8/grpc_example/lib/log"
 	middleware_logging "github.com/zmzhang8/grpc_example/middleware/logging"
+	middleware_recovery "github.com/zmzhang8/grpc_example/middleware/recovery"
 	middleware_skip "github.com/zmzhang8/grpc_example/middleware/skip"
 	middleware_trace_id "github.com/zmzhang8/grpc_example/middleware/trace_id"
 	pb "github.com/zmzhang8/grpc_example/proto/v1"
@@ -270,11 +271,13 @@ func createGrpcServer(tlsConfig *tls.Config, enableReflection bool) *grpc.Server
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			middleware_trace_id.StreamServerInterceptor(),
 			middleware_logging.StreamServerInterceptor(log.DefaultLogger),
+			middleware_recovery.StreamServerInterceptor(log.DefaultLogger),
 			middleware_skip.StreamServerInterceptor(grpc_middleware_auth.StreamServerInterceptor(auth.DefaultAuth), skipAuthFunc),
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			middleware_trace_id.UnaryServerInterceptor(),
 			middleware_logging.UnaryServerInterceptor(log.DefaultLogger),
+			middleware_recovery.UnaryServerInterceptor(log.DefaultLogger),
 			middleware_skip.UnaryServerInterceptor(grpc_middleware_auth.UnaryServerInterceptor(auth.DefaultAuth), skipAuthFunc),
 		)),
 	)
