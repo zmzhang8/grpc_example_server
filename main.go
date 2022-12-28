@@ -47,7 +47,7 @@ func main() {
 	log.InitDefaultLogger(log.NewCore(false, os.Stdout, *debug))
 	defer log.Sync()
 	if *debug {
-		log.Info("Enable debug")
+		log.Debug("Debug Mode")
 	}
 
 	var tlsConfig *tls.Config
