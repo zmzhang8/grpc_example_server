@@ -18,6 +18,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
@@ -313,7 +314,7 @@ func createGatewayMux(
 	grpcServerTlsEnabled bool,
 	ctx context.Context,
 ) (*runtime.ServeMux, error) {
-	credsOption := grpc.WithInsecure()
+	credsOption := grpc.WithTransportCredentials(insecure.NewCredentials())
 	if grpcServerTlsEnabled {
 		creds := credentials.NewTLS(&tls.Config{
 			InsecureSkipVerify: false,
