@@ -262,6 +262,9 @@ func createGrpcServer(tlsConfig *tls.Config, enableReflection bool) *grpc.Server
 		credsOption = grpc.Creds(credentials.NewTLS(tlsConfig))
 	}
 
+	loggerFunc := func(ctx context.Context, logger log.Logger) log.Logger {
+		return logger.With("trace-id", middleware_trace_id.MustGetTraceID(ctx))
+	}
 	skipAuthFunc := func(ctx context.Context, service string, method string) bool {
 		return service == grpc_reflection_v1alpha.ServerReflection_ServiceDesc.ServiceName ||
 			service == grpc_health_v1.Health_ServiceDesc.ServiceName
@@ -270,7 +273,7 @@ func createGrpcServer(tlsConfig *tls.Config, enableReflection bool) *grpc.Server
 		credsOption,
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			middleware_trace_id.StreamServerInterceptor(),
-			middleware_logging.StreamServerInterceptor(log.DefaultLogger),
+			middleware_logging.StreamServerInterceptor(log.DefaultLogger, loggerFunc),
 			middleware_recovery.StreamServerInterceptor(log.DefaultLogger),
 			middleware_skip.StreamServerInterceptor(
 				grpc_middleware_auth.StreamServerInterceptor(auth.RejectAll),
@@ -279,7 +282,7 @@ func createGrpcServer(tlsConfig *tls.Config, enableReflection bool) *grpc.Server
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			middleware_trace_id.UnaryServerInterceptor(),
-			middleware_logging.UnaryServerInterceptor(log.DefaultLogger),
+			middleware_logging.UnaryServerInterceptor(log.DefaultLogger, loggerFunc),
 			middleware_recovery.UnaryServerInterceptor(log.DefaultLogger),
 			middleware_skip.UnaryServerInterceptor(
 				grpc_middleware_auth.UnaryServerInterceptor(auth.RejectAll),

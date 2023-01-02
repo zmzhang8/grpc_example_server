@@ -11,13 +11,9 @@ import (
 type contextKey struct{}
 
 func MustGetAuthMetadata(ctx context.Context) string {
-	value := ctx.Value(contextKey{})
-	if value == nil {
-		panic("auth metadata doesn't exist in context")
-	}
-	metadata, ok := value.(string)
+	metadata, ok := ctx.Value(contextKey{}).(string)
 	if !ok {
-		panic("bad auth metadata in context")
+		panic("cannot get auth metadata in context")
 	}
 	return metadata
 }

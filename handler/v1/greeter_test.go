@@ -16,7 +16,7 @@ import (
 func TestGreeterServer_SayHello_success(t *testing.T) {
 	s := NewGreeterServer()
 	logger := log.NewLogger(log.NewCore(false, os.Stdout, false))
-	ctx := context.WithValue(context.TODO(), logging.ContextKey, logger)
+	ctx := context.WithValue(context.TODO(), logging.ContextKey(), logger)
 	req := pb.HelloRequest{
 		Name: "world",
 	}
@@ -36,7 +36,7 @@ func TestGreeterServer_SayHello_success(t *testing.T) {
 func TestGreeterServer_SayHello_failure(t *testing.T) {
 	s := NewGreeterServer()
 	logger := log.NewLogger(log.NewCore(false, os.Stdout, false))
-	ctx := context.WithValue(context.TODO(), logging.ContextKey, logger)
+	ctx := context.WithValue(context.TODO(), logging.ContextKey(), logger)
 	req := pb.HelloRequest{
 		Name: "",
 	}

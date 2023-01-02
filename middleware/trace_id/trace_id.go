@@ -9,12 +9,12 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-const ContextKey = "trace-id"
+type contextKey struct{}
 
-func TraceIdFromContext(ctx context.Context) string {
-	traceId, ok := ctx.Value(ContextKey).(string)
+func MustGetTraceID(ctx context.Context) string {
+	traceId, ok := ctx.Value(contextKey{}).(string)
 	if !ok {
-		return ""
+		panic("cannot trace-id in context")
 	}
 	return traceId
 }
@@ -27,10 +27,8 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
 		traceId := uuid.NewString()
-		newCtx := context.WithValue(ctx, ContextKey, traceId)
-		grpc.SetHeader(newCtx, metadata.Pairs(
-			ContextKey, traceId,
-		))
+		newCtx := context.WithValue(ctx, contextKey{}, traceId)
+		grpc.SetHeader(newCtx, metadata.Pairs("trace-id", traceId))
 
 		return handler(newCtx, req)
 	}
@@ -44,10 +42,8 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 		handler grpc.StreamHandler,
 	) error {
 		traceId := uuid.NewString()
-		newCtx := context.WithValue(stream.Context(), ContextKey, traceId)
-		stream.SetHeader(metadata.Pairs(
-			ContextKey, traceId,
-		))
+		newCtx := context.WithValue(stream.Context(), contextKey{}, traceId)
+		stream.SetHeader(metadata.Pairs("trace-id", traceId))
 		wrapped := grpc_middleware.WrapServerStream(stream)
 		wrapped.WrappedContext = newCtx
 

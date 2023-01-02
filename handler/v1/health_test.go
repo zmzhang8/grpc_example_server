@@ -27,7 +27,7 @@ func (s *healthWatchServerMock) Send(resp *pb.HealthCheckResponse) error {
 func TestHealthServer_Check_success(t *testing.T) {
 	s := NewHealthServer()
 	logger := log.NewLogger(log.NewCore(false, os.Stdout, false))
-	ctx := context.WithValue(context.TODO(), logging.ContextKey, logger)
+	ctx := context.WithValue(context.TODO(), logging.ContextKey(), logger)
 	req := pb.HealthCheckRequest{}
 
 	_, err := s.Check(ctx, &req)
@@ -41,7 +41,7 @@ func TestHealthServer_Watch_success(t *testing.T) {
 	s := NewHealthServer()
 	logger := log.NewLogger(log.NewCore(false, os.Stdout, false))
 	ctx, cancelFunc := context.WithTimeout(
-		context.WithValue(context.TODO(), logging.ContextKey, logger),
+		context.WithValue(context.TODO(), logging.ContextKey(), logger),
 		time.Second,
 	)
 	defer cancelFunc()

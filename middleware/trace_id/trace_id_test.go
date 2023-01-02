@@ -10,42 +10,40 @@ import (
 	"github.com/zmzhang8/grpc_example/test"
 )
 
-func TestRequestIdFromContext_success(t *testing.T) {
-	wantRequestId := "xxx"
-	ctx := context.WithValue(context.TODO(), ContextKey, wantRequestId)
+func TestGetTraceID_success(t *testing.T) {
+	ctx := context.WithValue(context.TODO(), contextKey{}, "dummy")
 
-	gotRequestId := TraceIdFromContext(ctx)
+	gotTraceID := MustGetTraceID(ctx)
 
-	if gotRequestId != wantRequestId {
-		t.Errorf("trace id %v; want %v", gotRequestId, wantRequestId)
+	if gotTraceID != "dummy" {
+		t.Errorf("trace id %v; want dummy", gotTraceID)
 	}
 }
 
-func TestRequestIdFromContext_failure(t *testing.T) {
-	wantRequestId := ""
-	ctx := context.TODO()
+func TestGetTraceID_failure(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("panicked false; want true")
+		}
+	}()
 
-	gotRequestId := TraceIdFromContext(ctx)
-
-	if gotRequestId != wantRequestId {
-		t.Errorf("trace id %v; want %v", gotRequestId, wantRequestId)
-	}
+	MustGetTraceID(context.TODO())
 }
 
 func TestUnaryServerInterceptor(t *testing.T) {
 	ctx := context.TODO()
 	info := grpc.UnaryServerInfo{}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return "yyy", errors.New("zzz")
+		if _, ok := ctx.Value(contextKey{}).(string); !ok {
+			return nil, errors.New("")
+		}
+		return nil, nil
 	}
 
-	resp, err := UnaryServerInterceptor()(ctx, nil, &info, handler)
+	_, err := UnaryServerInterceptor()(ctx, nil, &info, handler)
 
-	if resp != "yyy" {
-		t.Errorf("resp %v; want yyy", resp)
-	}
-	if err.Error() != "zzz" {
-		t.Errorf("err %v; want zzz", err)
+	if err != nil {
+		t.Errorf("err %v; want <nil>", err)
 	}
 }
 
@@ -54,12 +52,15 @@ func TestStreamServerInterceptor(t *testing.T) {
 	stream := test.ServerStreamMock{Ctx: ctx}
 	info := grpc.StreamServerInfo{}
 	handler := func(srv interface{}, stream grpc.ServerStream) error {
-		return errors.New("zzz")
+		if _, ok := stream.Context().Value(contextKey{}).(string); !ok {
+			return errors.New("")
+		}
+		return nil
 	}
 
 	err := StreamServerInterceptor()(nil, stream, &info, handler)
 
-	if err.Error() != "zzz" {
-		t.Errorf("err %v; want zzz", err)
+	if err != nil {
+		t.Errorf("err %v; want <nil>", err)
 	}
 }

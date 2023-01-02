@@ -13,21 +13,23 @@ import (
 	"github.com/zmzhang8/grpc_example/lib/log"
 )
 
-const ContextKey = "logger"
+type contextKey struct{}
+
+type LoggerFunc func(ctx context.Context, logger log.Logger) log.Logger
+
+func ContextKey() contextKey {
+	return contextKey{}
+}
 
 func MustGetLogger(ctx context.Context) log.Logger {
-	loggerValue := ctx.Value(ContextKey)
-	if loggerValue == nil {
-		panic("logger doesn't exist in context")
-	}
-	logger, ok := loggerValue.(log.Logger)
+	logger, ok := ctx.Value(contextKey{}).(log.Logger)
 	if !ok {
-		panic("bad logger in context")
+		panic("cannot get logger in context")
 	}
 	return logger
 }
 
-func UnaryServerInterceptor(logger log.Logger) grpc.UnaryServerInterceptor {
+func UnaryServerInterceptor(logger log.Logger, loggerFunc LoggerFunc) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req interface{},
@@ -35,8 +37,11 @@ func UnaryServerInterceptor(logger log.Logger) grpc.UnaryServerInterceptor {
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
 		startTime := time.Now().UTC()
-		contextLogger := getLoggerWithContextFields(logger, ctx)
-		newCtx := context.WithValue(ctx, ContextKey, contextLogger)
+		contextLogger := logger
+		if loggerFunc != nil {
+			contextLogger = loggerFunc(ctx, logger)
+		}
+		newCtx := context.WithValue(ctx, contextKey{}, contextLogger)
 
 		service, method := splitServiceMethod(info.FullMethod)
 		stats := []interface{}{
@@ -44,7 +49,6 @@ func UnaryServerInterceptor(logger log.Logger) grpc.UnaryServerInterceptor {
 			"grpc.method", method,
 			"grpc.start_time", startTime,
 		}
-		contextLogger.Infow("Started unary call", stats...)
 
 		resp, err := handler(newCtx, req)
 
@@ -60,7 +64,7 @@ func UnaryServerInterceptor(logger log.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
-func StreamServerInterceptor(logger log.Logger) grpc.StreamServerInterceptor {
+func StreamServerInterceptor(logger log.Logger, loggerFunc LoggerFunc) grpc.StreamServerInterceptor {
 	return func(
 		srv interface{},
 		stream grpc.ServerStream,
@@ -69,8 +73,11 @@ func StreamServerInterceptor(logger log.Logger) grpc.StreamServerInterceptor {
 	) error {
 		startTime := time.Now().UTC()
 		ctx := stream.Context()
-		contextLogger := getLoggerWithContextFields(logger, ctx)
-		newCtx := context.WithValue(ctx, ContextKey, contextLogger)
+		contextLogger := logger
+		if loggerFunc != nil {
+			contextLogger = loggerFunc(ctx, logger)
+		}
+		newCtx := context.WithValue(ctx, contextKey{}, contextLogger)
 		wrapped := grpc_middleware.WrapServerStream(stream)
 		wrapped.WrappedContext = newCtx
 
@@ -80,7 +87,6 @@ func StreamServerInterceptor(logger log.Logger) grpc.StreamServerInterceptor {
 			"grpc.method", method,
 			"grpc.start_time", startTime,
 		}
-		contextLogger.Infow("Started stream call", stats...)
 
 		err := handler(srv, wrapped)
 
@@ -100,20 +106,6 @@ func splitServiceMethod(fullMethod string) (string, string) {
 	service := path.Dir(fullMethod)[1:]
 	method := path.Base(fullMethod)
 	return service, method
-}
-
-func getLoggerWithContextFields(logger log.Logger, ctx context.Context) log.Logger {
-	ctxFields := []string{"trace-id"}
-	args := make([]interface{}, 0)
-	for _, key := range ctxFields {
-		value, ok := ctx.Value(key).(string)
-		if ok && value != "" {
-			args = append(args, key)
-			args = append(args, value)
-		}
-	}
-
-	return logger.With(args...)
 }
 
 func logwCodeToLevel(

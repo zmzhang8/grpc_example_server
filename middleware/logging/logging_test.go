@@ -14,7 +14,7 @@ import (
 
 func TestMustGetLogger_success(t *testing.T) {
 	wantLogger := log.NewLogger(log.NewCore(false, os.Stdout, false))
-	ctx := context.WithValue(context.TODO(), ContextKey, wantLogger)
+	ctx := context.WithValue(context.TODO(), contextKey{}, wantLogger)
 
 	gotLogger := MustGetLogger(ctx)
 
@@ -35,38 +35,40 @@ func TestMustGetLogger_failure(t *testing.T) {
 
 func TestUnaryServerInterceptor(t *testing.T) {
 	logger := log.NewLogger(log.NewCore(false, os.Stdout, false))
-	ctx := context.WithValue(context.TODO(), "request-id", "")
+	ctx := context.TODO()
 	info := grpc.UnaryServerInfo{
 		FullMethod: "/test.TestServer/Hello",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return "yyy", errors.New("zzz")
+		if _, ok := ctx.Value(contextKey{}).(log.Logger); !ok {
+			return nil, errors.New("")
+		}
+		return nil, nil
 	}
 
-	resp, err := UnaryServerInterceptor(logger)(ctx, nil, &info, handler)
+	_, err := UnaryServerInterceptor(logger, nil)(ctx, nil, &info, handler)
 
-	if resp != "yyy" {
-		t.Errorf("resp %v; want yyy", resp)
-	}
-	if err.Error() != "zzz" {
-		t.Errorf("err %v; want zzz", err)
+	if err != nil {
+		t.Errorf("err %v; want <nil>", err)
 	}
 }
 
 func TestStreamServerInterceptor(t *testing.T) {
 	logger := log.NewLogger(log.NewCore(false, os.Stdout, false))
-	ctx := context.WithValue(context.TODO(), "request-id", "")
-	stream := test.ServerStreamMock{Ctx: ctx}
+	stream := test.ServerStreamMock{Ctx: context.TODO()}
 	info := grpc.StreamServerInfo{
 		FullMethod: "/test.TestServer/Hello",
 	}
 	handler := func(srv interface{}, stream grpc.ServerStream) error {
-		return errors.New("zzz")
+		if _, ok := stream.Context().Value(contextKey{}).(log.Logger); !ok {
+			return errors.New("")
+		}
+		return nil
 	}
 
-	err := StreamServerInterceptor(logger)(nil, stream, &info, handler)
+	err := StreamServerInterceptor(logger, nil)(nil, stream, &info, handler)
 
-	if err.Error() != "zzz" {
-		t.Errorf("err %v; want zzz", err)
+	if err != nil {
+		t.Errorf("err %v; want <nil>", err)
 	}
 }
