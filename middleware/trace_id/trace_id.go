@@ -14,7 +14,7 @@ type contextKey struct{}
 func MustGetTraceID(ctx context.Context) string {
 	traceId, ok := ctx.Value(contextKey{}).(string)
 	if !ok {
-		panic("cannot trace-id in context")
+		panic("cannot get trace id in context")
 	}
 	return traceId
 }
