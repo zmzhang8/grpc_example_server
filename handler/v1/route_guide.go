@@ -12,7 +12,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/zmzhang8/grpc_example/lib/auth"
-	"github.com/zmzhang8/grpc_example/lib/log"
 	pb "github.com/zmzhang8/grpc_example/proto/v1"
 )
 
@@ -160,7 +159,7 @@ func (s *routeGuideServer) AuthFuncOverride(ctx context.Context, fullMethodName 
 func NewRouteGuideServer() *routeGuideServer {
 	server := &routeGuideServer{routeNotes: make(map[string][]*pb.RouteNote)}
 	if err := json.Unmarshal(exampleData, &server.savedFeatures); err != nil {
-		log.Fatal("Failed to load default features: %v", err)
+		panic("Failed to load default features")
 	}
 	return server
 }

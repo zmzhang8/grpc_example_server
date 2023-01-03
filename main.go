@@ -45,48 +45,48 @@ func main() {
 	)
 	flag.Parse()
 
-	log.InitDefaultLogger(log.NewCore(false, os.Stdout, *debug))
-	defer log.Sync()
+	logger := log.NewLogger(log.NewCore(false, os.Stdout, *debug))
+	defer logger.Sync()
 	if *debug {
-		log.Debug("Debug enabled")
+		logger.Debug("Debug enabled")
 	}
 
 	var tlsConfig *tls.Config
 	if *tlsCert != "" && *tlsKey != "" {
-		log.Info("TLS enabled")
+		logger.Info("TLS enabled")
 		var err error
 		if tlsConfig, err = loadTlsCert(*tlsCert, *tlsKey); err != nil {
-			log.Fatalw("Failed to load TLS cert", "error", err)
+			logger.Fatalw("Failed to load TLS cert", "error", err)
 		}
 	}
 
 	if *mode == "grpc" {
-		grpcServer := createGrpcServer(tlsConfig, *debug)
-		if err := runGrpcServer(grpcServer, *port); err != nil {
-			log.Fatalw("gRPC server failed to serve", "error", err)
+		grpcServer := createGrpcServer(logger, tlsConfig, *debug)
+		if err := runGrpcServer(logger, grpcServer, *port); err != nil {
+			logger.Fatalw("gRPC server failed to serve", "error", err)
 		}
 	} else if *mode == "gateway" {
 		if *grpcServerEndpoint == "" {
-			log.Fatal("grpc-server-endpoint must be specified")
+			logger.Fatal("grpc-server-endpoint must be specified")
 		}
-		if err := runGatewayServer(*grpcServerEndpoint, *port, tlsConfig, *debug); err != nil {
-			log.Fatalw("gRPC-Gateway server failed to serve", "error", err)
+		if err := runGatewayServer(logger, *grpcServerEndpoint, *port, tlsConfig, *debug); err != nil {
+			logger.Fatalw("gRPC-Gateway server failed to serve", "error", err)
 		}
 	} else if *mode == "gateway-hybrid" {
 		if *grpcServerEndpoint == "" {
-			log.Fatal("grpc-server-endpoint must be specified")
+			logger.Fatal("grpc-server-endpoint must be specified")
 		}
-		grpcServer := createGrpcServer(tlsConfig, *debug)
-		if err := runGrpcGatewayHybridServer(grpcServer, *grpcServerEndpoint, *port, tlsConfig, *debug); err != nil {
-			log.Fatal("gRPC and gRPC-Gateway Hybrid server failed to serve", "error", err)
+		grpcServer := createGrpcServer(logger, tlsConfig, *debug)
+		if err := runGrpcGatewayHybridServer(logger, grpcServer, *grpcServerEndpoint, *port, tlsConfig, *debug); err != nil {
+			logger.Fatal("gRPC and gRPC-Gateway Hybrid server failed to serve", "error", err)
 		}
 	} else if *mode == "web-hybrid" {
-		grpcServer := createGrpcServer(tlsConfig, *debug)
-		if err := runGrpcWebHybridServer(grpcServer, *port, tlsConfig); err != nil {
-			log.Fatalw("gRPC and gRPC-Web hybrid server failed to serve", "error", err)
+		grpcServer := createGrpcServer(logger, tlsConfig, *debug)
+		if err := runGrpcWebHybridServer(logger, grpcServer, *port, tlsConfig); err != nil {
+			logger.Fatalw("gRPC and gRPC-Web hybrid server failed to serve", "error", err)
 		}
 	} else {
-		log.Error("Invalid mode ", *mode)
+		logger.Error("Invalid mode ", *mode)
 	}
 }
 
@@ -102,16 +102,17 @@ func loadTlsCert(tlsCert, tlsKey string) (*tls.Config, error) {
 
 // Run standalone gRPC server.
 func runGrpcServer(
+	logger log.Logger,
 	grpcServer *grpc.Server,
 	port int,
 ) error {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		log.Error("Server failed to listen at port ", port)
+		logger.Error("Server failed to listen at port ", port)
 		return err
 	}
 
-	log.Info("gRPC server is listening at port ", port)
+	logger.Info("gRPC server is listening at port ", port)
 	return grpcServer.Serve(listener)
 }
 
@@ -119,6 +120,7 @@ func runGrpcServer(
 // The gateway server should be used with a gRPC server.
 // https://github.com/grpc-ecosystem/grpc-gateway
 func runGatewayServer(
+	logger log.Logger,
 	grpcServerEndpoint string,
 	port int,
 	tlsConfig *tls.Config,
@@ -128,9 +130,9 @@ func runGatewayServer(
 	defer cancel()
 
 	grpcServerTlsEnabled := tlsConfig != nil
-	gatewayMux, err := createGatewayMux(grpcServerEndpoint, grpcServerTlsEnabled, ctx)
+	gatewayMux, err := createGatewayMux(logger, grpcServerEndpoint, grpcServerTlsEnabled, ctx)
 	if err != nil {
-		log.Error("Failed to create gateway mux")
+		logger.Error("Failed to create gateway mux")
 		return err
 	}
 
@@ -146,7 +148,7 @@ func runGatewayServer(
 		})
 	}
 
-	log.Info("gRPC-Gateway server is listening at port ", port)
+	logger.Info("gRPC-Gateway server is listening at port ", port)
 	server := &http.Server{
 		Addr:      fmt.Sprintf(":%d", port),
 		Handler:   httpHandler,
@@ -162,6 +164,7 @@ func runGatewayServer(
 // Run gRPC server and gRPC-Gateway server together on the same port using mux.
 // https://github.com/philips/grpc-gateway-example
 func runGrpcGatewayHybridServer(
+	logger log.Logger,
 	grpcServer *grpc.Server,
 	grpcServerEndpoint string,
 	port int,
@@ -172,7 +175,7 @@ func runGrpcGatewayHybridServer(
 	defer cancel()
 
 	grpcServerTlsEnabled := tlsConfig != nil
-	gatewayMux, err := createGatewayMux(grpcServerEndpoint, grpcServerTlsEnabled, ctx)
+	gatewayMux, err := createGatewayMux(logger, grpcServerEndpoint, grpcServerTlsEnabled, ctx)
 	if err != nil {
 		return err
 	}
@@ -198,7 +201,7 @@ func runGrpcGatewayHybridServer(
 	// https://stackoverflow.com/questions/69542087/why-am-i-getting-connection-connection-closed-before-server-preface-received-in
 	httpHandler = h2c.NewHandler(httpHandler, &http2.Server{})
 
-	log.Info("gRPC and gRPC-Gateway Hybrid server is listening at port ", port)
+	logger.Info("gRPC and gRPC-Gateway Hybrid server is listening at port ", port)
 	server := &http.Server{
 		Addr:      fmt.Sprintf(":%d", port),
 		Handler:   httpHandler,
@@ -215,6 +218,7 @@ func runGrpcGatewayHybridServer(
 // Note that this server only supports unary calls and server-side streams.
 // https://pkg.go.dev/github.com/improbable-eng/grpc-web/go/grpcweb
 func runGrpcWebHybridServer(
+	logger log.Logger,
 	grpcServer *grpc.Server,
 	port int,
 	tlsConfig *tls.Config,
@@ -244,7 +248,7 @@ func runGrpcWebHybridServer(
 	// https://stackoverflow.com/questions/69542087/why-am-i-getting-connection-connection-closed-before-server-preface-received-in
 	httpHandler = h2c.NewHandler(httpHandler, &http2.Server{})
 
-	log.Info("gRPC and gRPC-Web Hybrid server is listening at port ", port)
+	logger.Info("gRPC and gRPC-Web Hybrid server is listening at port ", port)
 	server := &http.Server{
 		Addr:      fmt.Sprintf(":%d", port),
 		Handler:   httpHandler,
@@ -257,7 +261,11 @@ func runGrpcWebHybridServer(
 	}
 }
 
-func createGrpcServer(tlsConfig *tls.Config, enableReflection bool) *grpc.Server {
+func createGrpcServer(
+	logger log.Logger,
+	tlsConfig *tls.Config,
+	enableReflection bool,
+) *grpc.Server {
 	var credsOption grpc.ServerOption = grpc.EmptyServerOption{}
 	if tlsConfig != nil {
 		credsOption = grpc.Creds(credentials.NewTLS(tlsConfig))
@@ -274,8 +282,8 @@ func createGrpcServer(tlsConfig *tls.Config, enableReflection bool) *grpc.Server
 		credsOption,
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			middleware_trace_id.StreamServerInterceptor(),
-			middleware_logging.StreamServerInterceptor(log.DefaultLogger, loggerFunc),
-			middleware_recovery.StreamServerInterceptor(log.DefaultLogger),
+			middleware_logging.StreamServerInterceptor(logger, loggerFunc),
+			middleware_recovery.StreamServerInterceptor(logger),
 			middleware_skip.StreamServerInterceptor(
 				grpc_middleware_auth.StreamServerInterceptor(auth.RejectAll),
 				skipAuthFunc,
@@ -283,8 +291,8 @@ func createGrpcServer(tlsConfig *tls.Config, enableReflection bool) *grpc.Server
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			middleware_trace_id.UnaryServerInterceptor(),
-			middleware_logging.UnaryServerInterceptor(log.DefaultLogger, loggerFunc),
-			middleware_recovery.UnaryServerInterceptor(log.DefaultLogger),
+			middleware_logging.UnaryServerInterceptor(logger, loggerFunc),
+			middleware_recovery.UnaryServerInterceptor(logger),
 			middleware_skip.UnaryServerInterceptor(
 				grpc_middleware_auth.UnaryServerInterceptor(auth.RejectAll),
 				skipAuthFunc,
@@ -310,6 +318,7 @@ func createGrpcServer(tlsConfig *tls.Config, enableReflection bool) *grpc.Server
 }
 
 func createGatewayMux(
+	logger log.Logger,
 	grpcServerEndpoint string,
 	grpcServerTlsEnabled bool,
 	ctx context.Context,
@@ -324,7 +333,7 @@ func createGatewayMux(
 
 	clientConn, err := grpc.DialContext(ctx, grpcServerEndpoint, credsOption)
 	if err != nil {
-		log.Error("Failed to dail ", grpcServerEndpoint)
+		logger.Error("Failed to dail ", grpcServerEndpoint)
 		return nil, err
 	}
 
